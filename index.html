@@ -683,7 +683,8 @@
 
     @media (max-width: 720px) {
       .sticky-cta { display: block; }
-      body { padding-bottom: 80px; }
+      /* extra empty space below the footer on mobile only */
+      body { padding-bottom: calc(80px + 10rem); }
     }
 
     /* ============================================================
