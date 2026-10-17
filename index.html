@@ -882,14 +882,14 @@
     .modal__footer-text a:hover { text-decoration: underline; }
 
     /* ============================================================
-       SUCCESS / TOAST
+       SUCCESS / TOAST — centered on screen
        ============================================================ */
     .toast {
       position: fixed;
-      bottom: var(--s-6);
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%) translateY(120%);
-      z-index: 200;
+      transform: translate(-50%, -50%) scale(0.92);
+      z-index: 300;
       display: flex;
       align-items: center;
       gap: var(--s-3);
@@ -900,12 +900,18 @@
       font-weight: 500;
       border-radius: var(--r-pill);
       box-shadow: 0 16px 40px -8px rgba(0,0,0,0.35);
-      transition: transform 320ms var(--ease);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--dur) var(--ease),
+                  visibility var(--dur) var(--ease),
+                  transform var(--dur) var(--ease);
       pointer-events: none;
       max-width: calc(100vw - var(--s-8));
     }
     .toast.is-visible {
-      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
       pointer-events: auto;
     }
     .toast i {
@@ -1276,22 +1282,33 @@
   /* ---------- toast ---------- */
   const toast = document.getElementById('toast');
   const toastMessage = document.getElementById('toast-message');
-  let toastTimer;
-
-  const showToast = (message) => {
-    toastMessage.textContent = message;
-    toast.classList.add('is-visible');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(hideToast, 3200);
-  };
-  window.showToast = showToast;
+  let toastTimer = null;
 
   const hideToast = () => {
     toast.classList.remove('is-visible');
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
   };
   window.hideToast = hideToast;
 
-  /* ---------- action routing ---------- */
+  const showToast = (message) => {
+    // clear any pending hide so the timer always restarts cleanly
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    toastMessage.textContent = message;
+    // force reflow so the transition always replays even if already visible
+    toast.classList.remove('is-visible');
+    void toast.offsetWidth;
+    toast.classList.add('is-visible');
+    toastTimer = setTimeout(hideToast, 2000);
+  };
+  window.showToast = showToast;
+
+  /* ---------- action routing (open modals only — no toast here) ---------- */
   document.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {
       const action = el.dataset.action;
@@ -1344,7 +1361,7 @@
     }
   });
 
-  /* ---------- SIGN IN FORM: success → toast + close ---------- */
+  /* ---------- SIGN IN FORM: submit → toast + close ---------- */
   const signinForm = document.getElementById('signin-form');
   if (signinForm) {
     signinForm.addEventListener('submit', (e) => {
@@ -1355,7 +1372,7 @@
     });
   }
 
-  /* ---------- BUY FORM: success → toast + close ---------- */
+  /* ---------- BUY FORM: submit → toast + close ---------- */
   const buyForm = document.getElementById('buy-form');
   if (buyForm) {
     buyForm.addEventListener('submit', (e) => {
